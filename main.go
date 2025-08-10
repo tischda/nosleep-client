@@ -18,7 +18,7 @@ var flagHelp = flag.Bool("help", false, "displays this help message")
 var flagPort = flag.Int("port", DEFAULT_PORT, "RPC server listening port")
 var flagVersion = flag.Bool("version", false, "print version and exit")
 
-type ReadFlagsReply struct {
+type ExecStateReply struct {
 	Flags uint32
 }
 
@@ -93,7 +93,8 @@ EXAMPLES:`)
 	case "critical":
 		sendMessage(client, "Critical")
 	case "read":
-		sendMessageRead(client)
+		flags := sendMessage(client, "Read")
+		log.Printf("Previous ThreadExecutionState flags: 0x%X", flags)
 	case "shutdown":
 		sendMessage(client, "Shutdown")
 	default:
@@ -108,30 +109,13 @@ EXAMPLES:`)
 //
 //	client - the RPC client used to communicate with the server
 //	method - the method name (string) to call on the SleepControl service
-func sendMessage(client *rpc.Client, method string) {
-	var args, reply struct{}
-	err := client.Call("SleepControl."+method, &args, &reply)
+func sendMessage(client *rpc.Client, method string) uint32 {
+	var args struct{}
+	var reply ExecStateReply
+	err := client.Call("ExecStateManager."+method, &args, &reply)
 	if err != nil {
 		log.Fatalf("RPC error in %s: %v", method, err)
 	}
 	log.Printf("Successfully sent %s RPC", method)
-}
-
-// sendMessageRead sends an RPC call to the server to read the current flag value.
-//
-// WARNING: Microsoft does not provide an API to reliably read the currentSetThreadExecutionState
-// flags. The documentation states that calling the function with zero doesn't set any state,
-// but returns the prior value, which is not always meaningful.
-//
-// Parameters:
-//
-//	client - the RPC client used to communicate with the server
-func sendMessageRead(client *rpc.Client) {
-	var args struct{}
-	var reply ReadFlagsReply
-	err := client.Call("SleepControl.Read", &args, &reply)
-	if err != nil {
-		log.Fatalf("RPC error in Read: %v", err)
-	}
-	log.Printf("ThreadExecutionState flags read from server: 0x%X", reply.Flags)
+	return reply.Flags
 }

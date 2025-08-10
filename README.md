@@ -41,7 +41,7 @@ EXAMPLES:
   will set ThreadExecutionState to (ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED)
 ~~~
 
-You can test the result like this:
+You can test the result like this (requires admin rights):
 
 ~~~
 ❯ powercfg -requests
@@ -63,19 +63,6 @@ None.
 ACTIVELOCKSCREEN:
 None.
 ~~~
-
-### Known issues
-
-Setting ES_SYSTEM_REQUIRED will add an entry in powercfg requests (this happens when the
-server is started). Setting it again, will add another request. Clearing the flags, will
-remove the second request, but clearing it once more will not remove the first request.
-This means that you cannot allow the computer to sleep by clearing the flags. The only
-way is to send the SHUTDOWN command to terminate the server process.
-
-
-Read: Microsoft does not provide an API to reliably read the currentSetThreadExecutionState
-flags. Calling the function with zero doesn't set any state, but returns the prior value,
-which is not always meaningful.
 
 ### References
 
