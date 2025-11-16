@@ -11,13 +11,13 @@ import (
 func rpcClientSend(command string, cfg *Config) {
 
 	// connect to RPC server
-	address := fmt.Sprintf("%s:%d", cfg.server, cfg.port)
-	fmt.Printf("Connecting to RPC server at %s...\n", address)
-	client, err := rpc.Dial("tcp", address)
+	address := fmt.Sprintf("%s:%d", cfg.address, cfg.port)
+	fmt.Printf("Connecting to RPC server at %s (%s) ...\n", address, cfg.network)
+	client, err := rpc.Dial(cfg.network, address)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Close()
+	defer client.Close() //nolint:errcheck
 
 	// send command to server
 	cmd := strings.ToLower(command)

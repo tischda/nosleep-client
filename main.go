@@ -19,7 +19,8 @@ var (
 
 // flags
 type Config struct {
-	server  string
+	network string
+	address string
 	port    int
 	help    bool
 	version bool
@@ -27,8 +28,10 @@ type Config struct {
 
 func initFlags() *Config {
 	cfg := &Config{}
-	flag.StringVar(&cfg.server, "s", "127.0.0.1", "")
-	flag.StringVar(&cfg.server, "server", "127.0.0.1", "RPC server")
+	flag.StringVar(&cfg.network, "n", "tcp", "")
+	flag.StringVar(&cfg.network, "network", "tcp", "Network type (tcp, tcp4, tcp6, unix, etc.)")
+	flag.StringVar(&cfg.address, "a", "127.0.0.1", "")
+	flag.StringVar(&cfg.address, "address", "127.0.0.1", "RPC server")
 	flag.IntVar(&cfg.port, "p", DEFAULT_PORT, "")
 	flag.IntVar(&cfg.port, "port", DEFAULT_PORT, "RPC server listening port")
 	flag.BoolVar(&cfg.help, "?", false, "")
@@ -47,9 +50,9 @@ func main() {
 	cfg := initFlags()
 
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: "+name+` [--server <address>] [--port <port>] <COMMAND> 
+		fmt.Fprintln(os.Stderr, "Usage: "+name+` [OPTIONS] <COMMAND> 
 
-Calls the NoSleep RPC server on SERVER:PORT (default: 127.0.0.1:`+fmt.Sprintf("%d", DEFAULT_PORT)+`).
+Calls the NoSleep RPC server on ADDRESS:PORT (default: 127.0.0.1:`+fmt.Sprintf("%d", DEFAULT_PORT)+`).
 You can manage the server using RPC calls to control thread execution states.
 
 COMMANDS:
@@ -58,10 +61,12 @@ COMMANDS:
 
 OPTIONS:
 
-  -s, --server
-        RPC server (default 127.0.0.1)
+  -n, --network string
+          Network type: tcp, tcp4, tcp6, unix or unixpacket (default "tcp")
+  -a, --address string
+          Bind address (default 127.0.0.1)
   -p, --port int
-        RPC server listening port (default 9001)
+          RPC server listening port (default 9001)
   -?, --help
         displays this help message
   -v, --version
