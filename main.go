@@ -4,35 +4,52 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/rpc"
 	"os"
-	"strings"
 )
 
-const PROG_NAME string = "nosleep-client"
 const DEFAULT_PORT = 9001
 
-var version string
+// https://goreleaser.com/cookbooks/using-main.version/
+var (
+	name    string
+	version string
+	date    string
+	commit  string
+)
 
-var flagHelp = flag.Bool("help", false, "displays this help message")
-var flagPort = flag.Int("port", DEFAULT_PORT, "RPC server listening port")
-var flagVersion = flag.Bool("version", false, "print version and exit")
+// flags
+type Config struct {
+	server  string
+	port    int
+	help    bool
+	version bool
+}
+
+func initFlags() *Config {
+	cfg := &Config{}
+	flag.StringVar(&cfg.server, "s", "127.0.0.1", "")
+	flag.StringVar(&cfg.server, "server", "127.0.0.1", "RPC server")
+	flag.IntVar(&cfg.port, "p", DEFAULT_PORT, "")
+	flag.IntVar(&cfg.port, "port", DEFAULT_PORT, "RPC server listening port")
+	flag.BoolVar(&cfg.help, "?", false, "")
+	flag.BoolVar(&cfg.help, "help", false, "displays this help message")
+	flag.BoolVar(&cfg.version, "v", false, "")
+	flag.BoolVar(&cfg.version, "version", false, "print version and exit")
+	return cfg
+}
 
 type ExecStateReply struct {
 	Flags uint32
 }
 
-func init() {
-	flag.BoolVar(flagHelp, "h", false, "")
-	flag.IntVar(flagPort, "p", DEFAULT_PORT, "")
-	flag.BoolVar(flagVersion, "v", false, "")
-}
-
 func main() {
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: "+PROG_NAME+` [--port <port>] <COMMAND> | --version | --help
+	log.SetFlags(0)
+	cfg := initFlags()
 
-Calls the NoSleep RPC server on 127.0.0.1:`+fmt.Sprintf("%d", DEFAULT_PORT)+`.
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: "+name+` [--server <address>] [--port <port>] <COMMAND> 
+
+Calls the NoSleep RPC server on SERVER:PORT (default: 127.0.0.1:`+fmt.Sprintf("%d", DEFAULT_PORT)+`).
 You can manage the server using RPC calls to control thread execution states.
 
 COMMANDS:
@@ -41,28 +58,30 @@ COMMANDS:
 
 OPTIONS:
 
-  -h, -help
-        displays this help message
-  -p, -port int
+  -s, --server
+        RPC server (default 127.0.0.1)
+  -p, --port int
         RPC server listening port (default 9001)
-  -v, -version
+  -?, --help
+        displays this help message
+  -v, --version
         print version and exit
 
 EXAMPLES:`)
 
-		fmt.Fprintln(os.Stderr, "\n  "+PROG_NAME+` --port 9015 display
+		fmt.Fprintln(os.Stderr, "\n  "+name+` --port 9015 display
 
   will set ThreadExecutionState to (ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED)`)
 	}
 
 	flag.Parse()
 
-	if flag.Arg(0) == "version" || *flagVersion {
-		fmt.Printf("%s version %s\n", PROG_NAME, version)
+	if flag.Arg(0) == "version" || cfg.version {
+		fmt.Printf("%s %s, built on %s (commit: %s)\n", name, version, date, commit)
 		return
 	}
 
-	if *flagHelp {
+	if cfg.help {
 		flag.Usage()
 		return
 	}
@@ -72,50 +91,6 @@ EXAMPLES:`)
 		os.Exit(1)
 	}
 
-	// Create RPC client
-	address := fmt.Sprintf("127.0.0.1:%d", *flagPort)
-	client, err := rpc.Dial("tcp", address)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer client.Close()
-
-	// Send command to server
-	cmd := strings.ToLower(flag.Arg(0))
-	switch cmd {
-
-	case "clear":
-		sendMessage(client, "Clear")
-	case "display":
-		sendMessage(client, "Display")
-	case "system":
-		sendMessage(client, "System")
-	case "critical":
-		sendMessage(client, "Critical")
-	case "read":
-		flags := sendMessage(client, "Read")
-		log.Printf("Previous ThreadExecutionState flags: 0x%X", flags)
-	case "shutdown":
-		sendMessage(client, "Shutdown")
-	default:
-		flag.Usage()
-		return
-	}
-}
-
-// sendMessage sends an RPC call to the server.
-//
-// Parameters:
-//
-//	client - the RPC client used to communicate with the server
-//	method - the method name (string) to call on the SleepControl service
-func sendMessage(client *rpc.Client, method string) uint32 {
-	var args struct{}
-	var reply ExecStateReply
-	err := client.Call("ExecStateManager."+method, &args, &reply)
-	if err != nil {
-		log.Fatalf("RPC error in %s: %v", method, err)
-	}
-	log.Printf("Successfully sent %s RPC", method)
-	return reply.Flags
+	// send command to server
+	rpcClientSend(flag.Arg(0), cfg)
 }
