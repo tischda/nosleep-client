@@ -22,9 +22,9 @@ go install github.com/tischda/nosleep-client@latest
 ## Usage
 
 ~~~
-Usage: nosleep-client [--server <address>] [--port <port>] <COMMAND>
+Usage: nosleep-client [OPTIONS] <COMMAND>
 
-Calls the NoSleep RPC server on SERVER:PORT (default: 127.0.0.1:9001).
+Calls the NoSleep RPC server on ADDRESS:PORT (default: 127.0.0.1:9001).
 You can manage the server using RPC calls to control thread execution states.
 
 COMMANDS:
@@ -33,10 +33,12 @@ COMMANDS:
 
 OPTIONS:
 
-  -s, --server
-        RPC server (default 127.0.0.1)
+  -n, --network string
+          Network type: tcp, tcp4, tcp6, unix or unixpacket (default "tcp")
+  -a, --address string
+          Bind address (default 127.0.0.1)
   -p, --port int
-        RPC server listening port (default 9001)
+          RPC server listening port (default 9001)
   -?, --help
         displays this help message
   -v, --version
