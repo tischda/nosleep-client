@@ -29,7 +29,8 @@ You can manage the server using RPC calls to control thread execution states.
 
 COMMANDS:
 
-   Clear, Display, System, Critical, Read and Shutdown.
+   Clear, Display, System, Critical, Read, Shutdown
+   Register, Unregister --pid <PID>
 
 OPTIONS:
 
@@ -76,6 +77,54 @@ ACTIVELOCKSCREEN:
 None.
 ~~~
 
-### References
+## Multiple processes
+
+Another way to control the server is by registering/unregistering processes.
+The server will automatically shut down when the last process is unregistered.
+
+### Client side
+
+Here is an example of registering and unregistering a process:
+
+~~~
+❯ nosleep-client --port 9001 register --pid 123
+Connecting to RPC server at 127.0.0.1:9001 (tcp) ...
+Successfully sent Register RPC
+
+❯ nosleep-client --port 9001 read
+Connecting to RPC server at 127.0.0.1:9001 (tcp) ...
+Successfully sent Read RPC
+Previous ThreadExecutionState flags: 0x80000000
+Registered processes: [123]
+
+❯ nosleep-client --port 9001 unregister --pid 123
+Connecting to RPC server at 127.0.0.1:9001 (tcp) ...
+Successfully sent Unregister RPC
+~~~
+
+### Server side
+
+This is what it looks like server-side:
+
+~~~
+❯ nosleep-server.exe
+nosleep-server starting...
+ExecStateManager.System — Forcing system ON
+RPC server listening on 127.0.0.1:9001 (tcp)
+ExecStateManager.Register — Register process: 123
+ExecStateManager.Read — Returning previous flags
+ExecStateManager.Unregister — Unregister process: 123
+ExecStateManager.Unregister — All processes unregistered
+ExecStateManager.Shutdown - Shutting down RPC server
+RPC server shutdown complete.
+ThreadExecutionState cleared.
+~~~
+
+The purpose of this is to coordoniate multiple jobs that run in parallel. Without this,
+the first backup process to finish would reset the execution state and potentially have
+the computer going to sleep before the second job finishes. This way, we make sure that
+only when all processes are done (and unregistered) the server will shut down.
+
+## References
 
 * [tischda/nosleep-client](/tischda/nosleep-client)

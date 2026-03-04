@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/rpc"
-	"os"
 	"strings"
 )
 
@@ -37,9 +36,9 @@ func rpcClientSend(command string, cfg *Config) {
 		log.Printf("Previous ThreadExecutionState flags: 0x%X", reply.Flags)
 		log.Printf("Registered processes: %v", reply.Processes)
 	case "register":
-		sendMessage(client, "Register", ExecStateRequest{Process: os.Getpid()})
+		sendMessage(client, "Register", ExecStateRequest{Process: cfg.pid})
 	case "unregister":
-		sendMessage(client, "Unregister", ExecStateRequest{Process: os.Getpid()})
+		sendMessage(client, "Unregister", ExecStateRequest{Process: cfg.pid})
 	case "shutdown":
 		sendMessage(client, "Shutdown", struct{}{})
 	default:

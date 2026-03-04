@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 const DEFAULT_PORT = 9001
@@ -24,6 +25,7 @@ type Config struct {
 	port    int
 	help    bool
 	version bool
+	pid     int
 }
 
 func initFlags() *Config {
@@ -63,7 +65,8 @@ You can manage the server using RPC calls to control thread execution states.
 
 COMMANDS:
 
-   Clear, Display, System, Critical, Read and Shutdown.
+   Clear, Display, System, Critical, Read, Shutdown
+   Register, Unregister --pid <PID>
 
 OPTIONS:
 
@@ -97,9 +100,22 @@ EXAMPLES:`)
 		return
 	}
 
-	if flag.NArg() == 0 || flag.NArg() > 1 {
+	if flag.NArg() == 0 {
 		flag.Usage()
 		os.Exit(1)
+	}
+
+	// Handle Register/Unregister subcommands with --pid flag
+	command := strings.ToLower(flag.Arg(0))
+	if command == "register" || command == "unregister" {
+		subFlags := flag.NewFlagSet(command, flag.ContinueOnError)
+		subFlags.IntVar(&cfg.pid, "pid", 0, "PID of the process to register/unregister")
+		if err := subFlags.Parse(flag.Args()[1:]); err != nil {
+			os.Exit(1)
+		}
+		if cfg.pid <= 0 {
+			log.Fatalf("flag --pid required to be greater than 0 for %s", command)
+		}
 	}
 
 	// send command to server
