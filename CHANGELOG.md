@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.2.0] - 4 March 2026
+
+* Add Register/Unregister commands
+* Add demo script for process registration
+* Fix versioninfo
+
 ## [v1.1.0] - 16 November 2025
 
 * Update build system
