@@ -41,8 +41,14 @@ func initFlags() *Config {
 	return cfg
 }
 
+// Make sure you use the same structs on both client and server side for the RPC calls to work correctly.
+type ExecStateRequest struct {
+	Process int
+}
+
 type ExecStateReply struct {
-	Flags uint32
+	Flags     uint32
+	Processes []int
 }
 
 func main() {

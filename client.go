@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/rpc"
+	"os"
 	"strings"
 )
 
@@ -24,18 +25,23 @@ func rpcClientSend(command string, cfg *Config) {
 	switch cmd {
 
 	case "clear":
-		sendMessage(client, "Clear")
+		sendMessage(client, "Clear", struct{}{})
 	case "display":
-		sendMessage(client, "Display")
+		sendMessage(client, "Display", struct{}{})
 	case "system":
-		sendMessage(client, "System")
+		sendMessage(client, "System", struct{}{})
 	case "critical":
-		sendMessage(client, "Critical")
+		sendMessage(client, "Critical", struct{}{})
 	case "read":
-		flags := sendMessage(client, "Read")
-		log.Printf("Previous ThreadExecutionState flags: 0x%X", flags)
+		reply := sendMessage(client, "Read", struct{}{})
+		log.Printf("Previous ThreadExecutionState flags: 0x%X", reply.Flags)
+		log.Printf("Registered processes: %v", reply.Processes)
+	case "register":
+		sendMessage(client, "Register", ExecStateRequest{Process: os.Getpid()})
+	case "unregister":
+		sendMessage(client, "Unregister", ExecStateRequest{Process: os.Getpid()})
 	case "shutdown":
-		sendMessage(client, "Shutdown")
+		sendMessage(client, "Shutdown", struct{}{})
 	default:
 		flag.Usage()
 		return
@@ -48,13 +54,12 @@ func rpcClientSend(command string, cfg *Config) {
 //
 //	client - the RPC client used to communicate with the server
 //	method - the method name (string) to call on the SleepControl service
-func sendMessage(client *rpc.Client, method string) uint32 {
-	var args struct{}
+func sendMessage(client *rpc.Client, command string, args any) ExecStateReply {
 	var reply ExecStateReply
-	err := client.Call("ExecStateManager."+method, &args, &reply)
+	err := client.Call("ExecStateManager."+command, args, &reply)
 	if err != nil {
-		log.Fatalf("RPC error in %s: %v", method, err)
+		log.Fatalf("RPC error in %s: %v", command, err)
 	}
-	log.Printf("Successfully sent %s RPC", method)
-	return reply.Flags
+	log.Printf("Successfully sent %s RPC", command)
+	return reply
 }
